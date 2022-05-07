@@ -1,0 +1,147 @@
+---
+title: "code"
+output: html_document
+date: '2022-05-06'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Library 
+```{r}
+library(Metrics)
+library(MASS)
+```
+```{r}
+train_df=read.csv('../output/step7/train.csv')
+test_df=read.csv('../output/step7/test.csv')
+```
+# Model 1
+
+## Training 
+
+
+```{r}
+fit=lm(Manhattan~.,data=train_df)
+summary(fit)
+```
+## Evaluation 
+
+```{r}
+
+pred_1<-predict(fit,test_df[,-3])
+```
+
+```{r}
+conf_interval=predict(fit,test_df[,-3],interval = 'confidence',level = 0.95)
+plot(1:(24*7),test_df[1:(24*7),3],type='l',col='black')
+polygon(c(1:(24*7),rev(1:(24*7))),c(conf_interval[1:(24*7),2],rev(conf_interval[1:(24*7),3])),col= rgb(0, 0, 255, max = 255, alpha = 105, names = "blue50"), border = NA)
+```
+
+# Model 2
+
+## Training 
+
+```{r}
+plot(fit,which=1:2)
+```
+
+```{r}
+result = boxcox(Manhattan~., lambda = seq(-0.5,0.5, length = 25), data=train_df)
+lambda = result$x[which(result$y==max(result$y))]
+```
+
+```{r}
+fit_2 = lm(I((Manhattan^lambda - 1)/lambda)~., data=train_df) 
+summary(fit_2)
+```
+
+## Evaluation
+
+```{r}
+fit_2$training_rmse<-sqrt(mean(fit$residuals^2))
+pred_2=((predict(fit_2,test_df[,-3])*lambda)+1)^(1/lambda)
+fit_2$test_rmse<-rmse(test_df[,3], pred_2)
+```
+
+```{r}
+conf_interval=predict(fit_2,test_df[,-3],interval = 'confidence',level = 0.95)
+plot(1:(24*7),test_df[1:(24*7),3],type='l',col='black')
+lines(1:(24*7),pred_1[1:(24*7)],type='l',col='green')
+polygon(c(1:(24*7),rev(1:(24*7))),c(((conf_interval[1:(24*7),2]*lambda)+1)^(1/lambda),rev((conf_interval[1:(24*7),3]*lambda)+1)^(1/lambda)),col= rgb(0, 0, 255, max = 255, alpha = 105, names = "blue50"), border = NA)
+```
+```{r}
+plot(fit_2,which=1:2)
+```
+
+# Model 3
+
+## Training 
+```{r}
+# ensure results are repeatable
+set.seed(7)
+# load the library
+library(mlbench)
+library(caret)
+
+# prepare training scheme
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+# train the model
+model <- train(Manhattan~., data=train_df, method="lm", trControl=control)
+# estimate variable importance
+importance <- varImp(model, scale=FALSE)$importance
+# summarize importance
+imp=rownames(importance)[order(importance$Overall, decreasing=TRUE)]
+print(imp[1:10])
+```
+
+```{r}
+x=c()
+y1=c()
+y2=c()
+index<- createDataPartition(train_df[,3] ,p = 0.8, list = FALSE)
+for (n in c(80:170)){
+  x<-append(x,n)
+  train<-subset(train_df[index,],select=c(imp[1:n],'Manhattan'))
+  test<-subset(train_df[-index,],select=c(imp[1:n]))
+  fit_3=lm(Manhattan~.,data=train)
+  y1<-append(y1,sqrt(mean(fit_3$residuals^2)))
+  y2<-append(y2,rmse(train_df[-index,3], predict(fit_3,test)))
+}
+```
+
+```{r}
+mmin=min(min(y1),min(y2))
+mmax=max(max(y1),max(y2))
+x=1:length(y1)
+plot(x,y1,type='l',ylim=c(mmin,mmax))
+lines(x,y2)
+```
+
+```{r}
+n=x[which.min(y2)]
+fit_3=lm(Manhattan~.,data=subset(train_df,select=c(imp[1:n],'Manhattan')))
+pred_3=predict(fit_3,subset(test_df,select=c(imp[1:n])))
+```
+
+# Comparison 
+
+```{r}
+plot(1:(24*7),test_df[1:(24*7),3],type='l')
+lines(1:(24*7),pred_3[1:(24*7)],col=rgb(0, 0, 255, max = 255, alpha = 125),lwd=2.5)
+lines(1:(24*7),pred_2[1:(24*7)],col=rgb(0, 255, 0, max = 255, alpha = 115),lwd=2)
+lines(1:(24*7),pred_1[1:(24*7)],col=rgb(255, 0, 0, max = 255, alpha = 115),lwd=2)
+```
+
+```{r}
+plot(1:(24*7),test_df[1:(24*7),3],type='l')
+lines(1:(24*7),pred_3[1:(24*7)],col=rgb(0, 0, 255, max = 255, alpha = 125),lwd=2.5)
+
+```
+
+```{r}
+rmse(test_df[,3], pred_1)
+rmse(test_df[,3], pred_2)
+rmse(test_df[,3], pred_3)
+```

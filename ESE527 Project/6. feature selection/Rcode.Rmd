@@ -1,0 +1,106 @@
+---
+title: "code"
+output: html_document
+date: '2022-04-22'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load Library
+
+```{r}
+library(car)
+```
+
+```{r}
+df<-read.csv('../output/step5/train_processed.csv')
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Manhattan~Brooklyn+Queens+Bronx+ Staten.Island,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Manhattan~Brooklyn+Queens+Bronx+ Staten.Island,data=transformed_data)
+summary(fit2)
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Queens~Manhattan+Brooklyn++Bronx+ Staten.Island,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Queens~Manhattan+Brooklyn++Bronx+ Staten.Island,data=transformed_data)
+summary(fit2)
+```
+
+
+
+```{r}
+fit=lm(Manhattan~Brooklyn+Queens+Bronx+ Staten.Island,data=df)
+acf(fit$residuals)
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Manhattan~Brooklyn+Queens+Bronx+ Staten.Island,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Manhattan~Brooklyn+Queens+Bronx+ Staten.Island,data=transformed_data)
+summary(fit2)
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Brooklyn~Queens+Manhattan+Bronx+ Staten.Island,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Brooklyn~Queens+Manhattan+Bronx+ Staten.Island,data=transformed_data)
+summary(fit2)
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Queens~Brooklyn+Manhattan+Bronx+ Staten.Island,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Queens~Brooklyn+Manhattan+Bronx+ Staten.Island,data=transformed_data)
+summary(fit2)
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Bronx~Queens+Brooklyn+Manhattan++ Staten.Island,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Bronx~Queens+Brooklyn+Manhattan++ Staten.Island,data=transformed_data)
+summary(fit2)
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Staten.Island~Queens+Brooklyn+Manhattan+Bronx,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Staten.Island~Queens+Brooklyn+Manhattan+Bronx,data=transformed_data)
+summary(fit2)
+```
+
+```{r}
+dw_test=durbinWatsonTest(lm(Manhattan~Brooklyn+Queens+Bronx,data=df),alternative='positive')
+corr<-dw_test$dw/2
+n=nrow(df)
+transformed_data<-df[2:n,]
+transformed_data[2:n,2:6]<-df[2:n,2:6]-corr*df[1:n-1,2:6]
+fit2=lm(Manhattan~Brooklyn+Queens+Bronx,data=transformed_data)
+summary(fit2)
+```
